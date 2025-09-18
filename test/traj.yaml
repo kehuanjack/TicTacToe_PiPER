@@ -1,0 +1,39 @@
+header:
+  stamp:
+    sec: 0
+    nanosec: 0
+  frame_id: "base_link"
+start_state:
+  joint_state:
+    header:
+      stamp:
+        sec: 0
+        nanosec: 0
+      frame_id: "base_link"
+    name: ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6"]
+group_name: "arm"
+link_name: "link6"
+waypoints:
+  - 
+    position: 
+      x: 0.057
+      y: 0.0
+      z: 0.414
+    orientation: 
+      x: 0.0
+      y: 0.6757
+      z: 0.0
+      w: 0.7373
+  - 
+    position: 
+      x: 0.257
+      y: 0.0
+      z: 0.414
+    orientation: 
+      x: 0.0
+      y: 0.6757
+      z: 0.0
+      w: 0.7373
+max_step: 0.001
+jump_threshold: 0.0
+avoid_collisions: true

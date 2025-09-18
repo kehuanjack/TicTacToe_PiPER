@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Robotic Arm Control System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #555;
+        }
+        .button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button-danger {
+            background-color: #f44336;
+        }
+        .button-danger:hover {
+            background-color: #d32f2f;
+        }
+        .button-secondary {
+            background-color: #008CBA;
+        }
+        .button-secondary:hover {
+            background-color: #007B9A;
+        }
+        .button-warning {
+            background-color: #ff9800;
+        }
+        .button-warning:hover {
+            background-color: #e68a00;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin: 20px auto;
+            width: 310px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #fff;
+            border: 2px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            cursor: pointer;
+        }
+        .cell:hover {
+            background-color: #f0f0f0;
+        }
+        .cell.disabled {
+            cursor: not-allowed;
+            background-color: #f5f5f5;
+        }
+        .status {
+            text-align: center;
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .playing {
+            background-color: #e7f3fe;
+        }
+        .finished {
+            background-color: #ffebee;
+        }
+        .calibrating {
+            background-color: #fff9e6;
+        }
+        .params-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .param-group {
+            margin-bottom: 10px;
+        }
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .param-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .symbol-selection {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .symbol-btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border: 2px solid #333;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+        .symbol-btn.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .rules {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .arm-symbol-selection {
+            margin: 10px 0;
+            text-align: center;
+        }
+        .calibration-status {
+            text-align: center;
+            font-size: 16px;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #fff9e6;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .test-symbol-btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border: 2px solid #333;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe Robotic Arm Control System</h1>
+        
+        <div class="section">
+            <h2>Game Control</h2>
+            <div class="rules">
+                <p><strong>Game Rules:</strong></p>
+                <p>When human goes first, the system will automatically detect your symbol using vision.</p>
+                <p>When arm goes first, you can choose the symbol for the robotic arm.</p>
+                <p>After the game starts, the board is for display only and cannot be interacted with.</p>
+                <p>Before the game starts, you can click on cells to test the drawing function.</p>
+            </div>
+            
+            <div id="status" class="status"></div>
+            
+            <div class="arm-symbol-selection" id="armSymbolSelection" style="display: none;">
+                <p>Select symbol for robotic arm:</p>
+                <button class="symbol-btn" data-symbol="1">X</button>
+                <button class="symbol-btn" data-symbol="2">O</button>
+            </div>
+            
+            <button id="startHumanFirst" class="button">Human First</button>
+            <button id="startArmFirst" class="button">Arm First</button>
+            <button id="resetGame" class="button button-danger">Reset Game</button>
+            <button id="drawGrid" class="button button-secondary">Draw Grid</button>
+            <button id="pressButton" class="button">Press Clear Button</button>
+            <button id="moveHome" class="button">Move to Home</button>
+            <button id="calibrateBoard" class="button button-warning">Calibrate Board</button>
+            
+            <div class="calibration-status" id="calibrationStatus" style="display: none;">
+                <p>Calibration in progress. Current step: <span id="currentStep">None</span></p>
+                <button id="nextCalibrationStep" class="button">Next Step</button>
+                <button id="cancelCalibration" class="button button-danger">Cancel Calibration</button>
+            </div>
+            
+            <div class="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Parameter Settings</h2>
+            <div class="params-form">
+                <div class="param-group">
+                    <label for="topLeftX">Top Left X:</label>
+                    <input type="number" id="topLeftX" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="topLeftY">Top Left Y:</label>
+                    <input type="number" id="topLeftY" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="topLeftZ">Top Left Z:</label>
+                    <input type="number" id="topLeftZ" step="0.01">
+                </div>
+                
+                <div class="param-group">
+                    <label for="topRightX">Top Right X:</label>
+                    <input type="number" id="topRightX" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="topRightY">Top Right Y:</label>
+                    <input type="number" id="topRightY" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="topRightZ">Top Right Z:</label>
+                    <input type="number" id="topRightZ" step="0.01">
+                </div>
+                
+                <div class="param-group">
+                    <label for="bottomRightX">Bottom Right X:</label>
+                    <input type="number" id="bottomRightX" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="bottomRightY">Bottom Right Y:</label>
+                    <input type="number" id="bottomRightY" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="bottomRightZ">Bottom Right Z:</label>
+                    <input type="number" id="bottomRightZ" step="0.01">
+                </div>
+                
+                <div class="param-group">
+                    <label for="bottomLeftX">Bottom Left X:</label>
+                    <input type="number" id="bottomLeftX" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="bottomLeftY">Bottom Left Y:</label>
+                    <input type="number" id="bottomLeftY" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="bottomLeftZ">Bottom Left Z:</label>
+                    <input type="number" id="bottomLeftZ" step="0.01">
+                </div>
+                
+                <div class="param-group">
+                    <label for="buttonX">Button X:</label>
+                    <input type="number" id="buttonX" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="buttonY">Button Y:</label>
+                    <input type="number" id="buttonY" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="buttonZ">Button Z:</label>
+                    <input type="number" id="buttonZ" step="0.01">
+                </div>
+                
+                <div class="param-group">
+                    <label for="tcpOffsetX">TCP Offset X:</label>
+                    <input type="number" id="tcpOffsetX" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="tcpOffsetY">TCP Offset Y:</label>
+                    <input type="number" id="tcpOffsetY" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="tcpOffsetZ">TCP Offset Z:</label>
+                    <input type="number" id="tcpOffsetZ" step="0.01">
+                </div>
+                
+                <div class="param-group">
+                    <label for="drawHeight">Draw Height:</label>
+                    <input type="number" id="drawHeight" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="approachHeight">Approach Height:</label>
+                    <input type="number" id="approachHeight" step="0.01">
+                </div>
+                <div class="param-group">
+                    <label for="crossSize">Cross Size:</label>
+                    <input type="number" id="crossSize" step="0.01">
+                </div>
+                
+                <div class="param-group">
+                    <label for="circleRadius">Circle Radius:</label>
+                    <input type="number" id="circleRadius" step="0.01">
+                </div>
+            </div>
+            <button id="saveParams" class="button">Save Parameters</button>
+        </div>
+    </div>
+
+    <!-- Test Draw Modal -->
+    <div id="testDrawModal" class="modal">
+        <div class="modal-content">
+            <h3>Select Symbol to Draw</h3>
+            <p>Testing position: <span id="testPosition"></span></p>
+            <button class="test-symbol-btn" data-symbol="1">X</button>
+            <button class="test-symbol-btn" data-symbol="2">O</button>
+            <button class="button button-danger" id="cancelTest">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedArmSymbol = null;
+        let testPosition = null;
+        let isCalibrating = false;
+        let currentCalibrationStep = 0;
+        const calibrationSteps = [
+            "Calibration Start",
+            "Top Left Corner",
+            "Top Right Corner",
+            "Bottom Right Corner",
+            "Bottom Left Corner",
+            "Clear Button",
+            "Calibration Complete"
+        ];
+        
+        // Update game state display
+        function updateGameState() {
+            fetch('/api/game_state')
+                .then(response => response.json())
+                .then(data => {
+                    const statusEl = document.getElementById('status');
+                    const humanSymbol = data.human_symbol === 1 ? 'X' : (data.human_symbol === 2 ? 'O' : 'Not selected');
+                    const armSymbol = data.arm_symbol === 1 ? 'X' : (data.arm_symbol === 2 ? 'O' : 'Not selected');
+                    
+                    statusEl.textContent = `State: ${data.state}, Current Player: ${data.current_player === 1 ? 'Human' : 'Arm'}, Human Symbol: ${humanSymbol}, Arm Symbol: ${armSymbol}`;
+                    
+                    if (data.state === 'PLAYING') {
+                        statusEl.className = 'status playing';
+                        // Game in progress, disable board clicks
+                        document.querySelectorAll('.cell').forEach(cell => {
+                            cell.classList.add('disabled');
+                        });
+                    } else if (data.state === 'FINISHED') {
+                        statusEl.className = 'status finished';
+                        // Game finished, disable board clicks
+                        document.querySelectorAll('.cell').forEach(cell => {
+                            cell.classList.add('disabled');
+                        });
+                    } else {
+                        statusEl.className = 'status';
+                        // Game not started, enable board clicks (for testing)
+                        document.querySelectorAll('.cell').forEach(cell => {
+                            cell.classList.remove('disabled');
+                        });
+                    }
+                    
+                    // Update board display
+                    const cells = document.querySelectorAll('.cell');
+                    cells.forEach((cell, index) => {
+                        cell.textContent = data.board[index] === 1 ? 'X' : 
+                                          data.board[index] === 2 ? 'O' : '';
+                    });
+                    
+                    // Show or hide arm symbol selection
+                    const armSymbolSelection = document.getElementById('armSymbolSelection');
+                    if (data.state === 'IDLE') {
+                        armSymbolSelection.style.display = 'block';
+                    } else {
+                        armSymbolSelection.style.display = 'none';
+                    }
+                });
+        }
+        
+        // Initialize parameters form
+        function initParamsForm() {
+            // This should get current parameter values from the server and populate the form
+            // Simplified implementation: use default values
+            document.getElementById('topLeftX').value = 0.3;
+            document.getElementById('topLeftY').value = 0.2;
+            document.getElementById('topLeftZ').value = 0.0;
+            
+            document.getElementById('topRightX').value = 0.3;
+            document.getElementById('topRightY').value = -0.2;
+            document.getElementById('topRightZ').value = 0.0;
+            
+            document.getElementById('bottomRightX').value = 0.5;
+            document.getElementById('bottomRightY').value = -0.2;
+            document.getElementById('bottomRightZ').value = 0.0;
+            
+            document.getElementById('bottomLeftX').value = 0.5;
+            document.getElementById('bottomLeftY').value = 0.2;
+            document.getElementById('bottomLeftZ').value = 0.0;
+            
+            document.getElementById('buttonX').value = 0.6;
+            document.getElementById('buttonY').value = 0.0;
+            document.getElementById('buttonZ').value = 0.0;
+            
+            document.getElementById('tcpOffsetX').value = 0.0;
+            document.getElementById('tcpOffsetY').value = 0.0;
+            document.getElementById('tcpOffsetZ').value = 0.15;
+            
+            document.getElementById('drawHeight').value = 0.02;
+            document.getElementById('approachHeight').value = 0.05;
+            document.getElementById('crossSize').value = 0.05;
+            document.getElementById('circleRadius').value = 0.03;
+        }
+        
+        // Event listeners
+        document.getElementById('startHumanFirst').addEventListener('click', () => {
+            fetch('/api/start_game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ arm_first: false })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      updateGameState();
+                  } else {
+                      alert('Failed to start game');
+                  }
+              });
+        });
+        
+        document.getElementById('startArmFirst').addEventListener('click', () => {
+            if (selectedArmSymbol === null) {
+                alert('Please select a symbol for the robotic arm first');
+                return;
+            }
+            
+            fetch('/api/start_game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    arm_first: true,
+                    arm_symbol: selectedArmSymbol 
+                })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      updateGameState();
+                  } else {
+                      alert('Failed to start game');
+                  }
+              });
+        });
+        
+        document.getElementById('resetGame').addEventListener('click', () => {
+            fetch('/api/reset_game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      updateGameState();
+                  } else {
+                      alert('Failed to reset game');
+                  }
+              });
+        });
+        
+        document.getElementById('drawGrid').addEventListener('click', () => {
+            fetch('/api/draw_grid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => response.json())
+              .then(data => {
+                  if (!data.success) {
+                      alert('Failed to draw grid');
+                  }
+              });
+        });
+        
+        document.getElementById('pressButton').addEventListener('click', () => {
+            fetch('/api/press_button', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => response.json())
+              .then(data => {
+                  if (!data.success) {
+                      alert('Failed to press button');
+                  }
+              });
+        });
+        
+        document.getElementById('moveHome').addEventListener('click', () => {
+            fetch('/api/move_home', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => response.json())
+              .then(data => {
+                  if (!data.success) {
+                      alert('Failed to move to home position');
+                  }
+                  
+                  // If we're in calibration mode, cancel it
+                  if (isCalibrating) {
+                      cancelCalibration();
+                  }
+              });
+        });
+        
+        document.getElementById('calibrateBoard').addEventListener('click', () => {
+            startCalibration();
+        });
+        
+        document.getElementById('nextCalibrationStep').addEventListener('click', () => {
+            nextCalibrationStep();
+        });
+        
+        document.getElementById('cancelCalibration').addEventListener('click', () => {
+            cancelCalibration();
+        });
+        
+        document.getElementById('saveParams').addEventListener('click', () => {
+            const params = {
+                'board_corners.top_left.0': parseFloat(document.getElementById('topLeftX').value),
+                'board_corners.top_left.1': parseFloat(document.getElementById('topLeftY').value),
+                'board_corners.top_left.2': parseFloat(document.getElementById('topLeftZ').value),
+                
+                'board_corners.top_right.0': parseFloat(document.getElementById('topRightX').value),
+                'board_corners.top_right.1': parseFloat(document.getElementById('topRightY').value),
+                'board_corners.top_right.2': parseFloat(document.getElementById('topRightZ').value),
+                
+                'board_corners.bottom_right.0': parseFloat(document.getElementById('bottomRightX').value),
+                'board_corners.bottom_right.1': parseFloat(document.getElementById('bottomRightY').value),
+                'board_corners.bottom_right.2': parseFloat(document.getElementById('bottomRightZ').value),
+                
+                'board_corners.bottom_left.0': parseFloat(document.getElementById('bottomLeftX').value),
+                'board_corners.bottom_left.1': parseFloat(document.getElementById('bottomLeftY').value),
+                'board_corners.bottom_left.2': parseFloat(document.getElementById('bottomLeftZ').value),
+                
+                'clear_button_position.0': parseFloat(document.getElementById('buttonX').value),
+                'clear_button_position.1': parseFloat(document.getElementById('buttonY').value),
+                'clear_button_position.2': parseFloat(document.getElementById('buttonZ').value),
+                
+                'tcp_offset.x': parseFloat(document.getElementById('tcpOffsetX').value),
+                'tcp_offset.y': parseFloat(document.getElementById('tcpOffsetY').value),
+                'tcp_offset.z': parseFloat(document.getElementById('tcpOffsetZ').value),
+                
+                'draw_height': parseFloat(document.getElementById('drawHeight').value),
+                'approach_height': parseFloat(document.getElementById('approachHeight').value),
+                'cross_size': parseFloat(document.getElementById('crossSize').value),
+                'circle_radius': parseFloat(document.getElementById('circleRadius').value)
+            };
+            
+            fetch('/api/update_params', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params)
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      alert('Parameters saved successfully');
+                  } else {
+                      alert('Failed to save parameters: ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
+                  }
+              });
+        });
+        
+        // Function to fetch parameters
+        function fetchParams() {
+            fetch('/api/get_params')
+                .then(response => response.json())
+                .then(data => {
+                    // Update all parameter input fields
+                    document.getElementById('topLeftX').value = data.board_corners.top_left[0];
+                    document.getElementById('topLeftY').value = data.board_corners.top_left[1];
+                    document.getElementById('topLeftZ').value = data.board_corners.top_left[2];
+                    
+                    document.getElementById('topRightX').value = data.board_corners.top_right[0];
+                    document.getElementById('topRightY').value = data.board_corners.top_right[1];
+                    document.getElementById('topRightZ').value = data.board_corners.top_right[2];
+                    
+                    document.getElementById('bottomRightX').value = data.board_corners.bottom_right[0];
+                    document.getElementById('bottomRightY').value = data.board_corners.bottom_right[1];
+                    document.getElementById('bottomRightZ').value = data.board_corners.bottom_right[2];
+                    
+                    document.getElementById('bottomLeftX').value = data.board_corners.bottom_left[0];
+                    document.getElementById('bottomLeftY').value = data.board_corners.bottom_left[1];
+                    document.getElementById('bottomLeftZ').value = data.board_corners.bottom_left[2];
+                    
+                    document.getElementById('buttonX').value = data.clear_button_position[0];
+                    document.getElementById('buttonY').value = data.clear_button_position[1];
+                    document.getElementById('buttonZ').value = data.clear_button_position[2];
+                    
+                    document.getElementById('tcpOffsetX').value = data.tcp_offset.x;
+                    document.getElementById('tcpOffsetY').value = data.tcp_offset.y;
+                    document.getElementById('tcpOffsetZ').value = data.tcp_offset.z;
+                    
+                    document.getElementById('drawHeight').value = data.draw_height;
+                    document.getElementById('approachHeight').value = data.approach_height;
+                    document.getElementById('crossSize').value = data.cross_size;
+                    document.getElementById('circleRadius').value = data.circle_radius;
+                });
+        }
+
+        // Arm symbol selection event
+        document.querySelectorAll('#armSymbolSelection .symbol-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedArmSymbol = parseInt(btn.getAttribute('data-symbol'));
+                document.querySelectorAll('#armSymbolSelection .symbol-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+        });
+        
+        // Test draw symbol selection event
+        document.querySelectorAll('.test-symbol-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const symbol = parseInt(btn.getAttribute('data-symbol'));
+                
+                // Call the draw symbol service, passing position and symbol
+                fetch('/api/draw_symbol', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        position: testPosition,
+                        symbol: symbol
+                    })
+                }).then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Failed to draw symbol');
+                    }
+                });
+                
+                // Close the modal
+                document.getElementById('testDrawModal').style.display = 'none';
+            });
+        });
+        
+        // Cancel test draw
+        document.getElementById('cancelTest').addEventListener('click', () => {
+            document.getElementById('testDrawModal').style.display = 'none';
+        });
+        
+        // Board click event
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.addEventListener('click', () => {
+                // Check game state, only allow test drawing in IDLE state
+                fetch('/api/game_state')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.state !== 'IDLE') {
+                            return; // Game in progress or finished, don't respond to clicks
+                        }
+                        
+                        // Game not started, show test draw modal
+                        testPosition = parseInt(cell.getAttribute('data-index'));
+                        document.getElementById('testPosition').textContent = testPosition;
+                        document.getElementById('testDrawModal').style.display = 'flex';
+                    });
+            });
+        });
+        
+        // Calibration functions
+        function startCalibration() {
+            isCalibrating = true;
+            currentCalibrationStep = 0;
+            document.getElementById('calibrationStatus').style.display = 'block';
+            document.getElementById('currentStep').textContent = calibrationSteps[currentCalibrationStep];
+            
+            // Disable other buttons during calibration
+            document.getElementById('startHumanFirst').disabled = true;
+            document.getElementById('startArmFirst').disabled = true;
+            document.getElementById('resetGame').disabled = true;
+            document.getElementById('drawGrid').disabled = true;
+            document.getElementById('pressButton').disabled = true;
+            document.getElementById('calibrateBoard').disabled = true;
+            
+            // Start the calibration process
+            fetch('/api/start_calibration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Failed to start calibration');
+                    cancelCalibration();
+                }
+            });
+        }
+        
+        function nextCalibrationStep() {
+            if (!isCalibrating) return;
+            
+            currentCalibrationStep++;
+            
+            if (currentCalibrationStep >= calibrationSteps.length) {
+                // Calibration complete
+                finishCalibration();
+                return;
+            }
+            
+            document.getElementById('currentStep').textContent = calibrationSteps[currentCalibrationStep];
+            
+            // Move to the next calibration point
+            fetch('/api/next_calibration_step', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Failed to move to next calibration step');
+                    cancelCalibration();
+                }
+            });
+        }
+        
+        function cancelCalibration() {
+            isCalibrating = false;
+            document.getElementById('calibrationStatus').style.display = 'none';
+            
+            // Re-enable other buttons
+            document.getElementById('startHumanFirst').disabled = false;
+            document.getElementById('startArmFirst').disabled = false;
+            document.getElementById('resetGame').disabled = false;
+            document.getElementById('drawGrid').disabled = false;
+            document.getElementById('pressButton').disabled = false;
+            document.getElementById('calibrateBoard').disabled = false;
+            
+            // Cancel the calibration process
+            fetch('/api/cancel_calibration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.log('Failed to cancel calibration');
+                }
+            });
+        }
+        
+        function finishCalibration() {
+            isCalibrating = false;
+            document.getElementById('calibrationStatus').style.display = 'none';
+            
+            // Re-enable other buttons
+            document.getElementById('startHumanFirst').disabled = false;
+            document.getElementById('startArmFirst').disabled = false;
+            document.getElementById('resetGame').disabled = false;
+            document.getElementById('drawGrid').disabled = false;
+            document.getElementById('pressButton').disabled = false;
+            document.getElementById('calibrateBoard').disabled = false;
+            
+            // Finish the calibration process
+            fetch('/api/finish_calibration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Calibration completed successfully');
+                    // Refresh parameters to get updated values
+                    fetchParams();
+                } else {
+                    alert('Failed to complete calibration');
+                }
+            });
+        }
+        
+        // Initialize
+        initParamsForm();
+        updateGameState();
+        fetchParams();
+        // Regularly update game state
+        setInterval(updateGameState, 1000);
+    </script>
+</body>
+</html>

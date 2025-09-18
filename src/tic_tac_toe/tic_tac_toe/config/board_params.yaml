@@ -1,0 +1,26 @@
+# TCP offset parameters
+tcp_offset:
+  x: 0.0
+  y: 0.0
+  z: 0.155  # Pen tip offset relative to J6 joint
+
+# Board corner coordinates
+board_corners:
+  top_left: [0.317, 0.11, -0.014]
+  top_right: [0.322, -0.09, -0.014]
+  bottom_right: [0.172, -0.09, -0.014]
+  bottom_left: [0.167, 0.103, -0.014]
+
+# Clear button position
+clear_button_position: [0.247, -0.102, 0.0]
+
+# Arm home position
+arm_home_position: [0.1, 0.0, 0.05]
+
+# Drawing parameters
+draw_height: 0.01
+approach_height: 0.05
+
+# Drawing size parameters
+cross_size: 0.02      # Cross size
+circle_radius: 0.015  # Circle radius

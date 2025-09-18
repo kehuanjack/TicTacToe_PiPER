@@ -1,0 +1,19 @@
+ik_request:
+  group_name: "arm"  # 根据您的规划组名称修改
+  robot_state:
+    joint_state:
+      header:
+        stamp: {sec: 0, nanosec: 0}
+        frame_id: "base_link"  # 根据您的机器人修改
+      name: ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6"]  # 根据您的关节名称修改
+      # position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 初始关节位置
+  pose_stamped:
+    header:
+      stamp: {sec: 0, nanosec: 0}
+      frame_id: "base_link"  # 根据您的机器人修改
+    pose:
+      position: {x: 0.057, y: 0.0, z: 0.414}
+      orientation: {x: 0.0, y: 0.6757, z: 0.0, w: 0.7373}
+  timeout: {sec: 5, nanosec: 0}
+  avoid_collisions: true
+  ik_link_name: "link6"  # 根据您的末端执行器链接名称修改

@@ -1,0 +1,4 @@
+int32 position
+int32 symbol
+---
+bool success

@@ -1,0 +1,12 @@
+header:
+  stamp: {sec: 0, nanosec: 0}
+  frame_id: "base_link"  # 根据您的机器人修改
+fk_link_names: ["link6"]  # 要计算FK的末端执行器链接
+robot_state:
+  joint_state:
+    header:
+      stamp: {sec: 0, nanosec: 0}
+      frame_id: "base_link"
+    name: ["joint1", "joint2", "joint3", 
+           "joint4", "joint5", "joint6"]
+    position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 关节位置

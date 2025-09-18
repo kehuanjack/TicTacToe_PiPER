@@ -1,0 +1,3 @@
+---
+int32[9] board_state
+string board_ascii

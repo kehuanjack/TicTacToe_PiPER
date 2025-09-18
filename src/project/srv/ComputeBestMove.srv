@@ -1,0 +1,5 @@
+int32[9] board_state
+---
+int32 best_move
+int32 player
+string game_status
